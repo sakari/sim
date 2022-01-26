@@ -1,12 +1,17 @@
 import { Elemental } from './elemental'
 
 export type Point = DOMPointReadOnly
+export interface PointI {
+  x: number
+  y: number
+}
 
 enum Relative {}
 enum World {}
 
 export type RelativePoint = { p: Point; element: Elemental } & Relative
 export type WorldPoint = Point & World
+export type Rect<P> = { p: P; width: number; height: number}
 
 export function pointTostr(p: RelativePoint | WorldPoint): string {
   if ('element' in p) {
@@ -17,6 +22,10 @@ export function pointTostr(p: RelativePoint | WorldPoint): string {
 
 function isRelative(p: RelativePoint | WorldPoint): p is RelativePoint {
   return 'element' in p
+}
+
+export function rectEqual<P extends WorldPoint>(a: Rect<P>, b: Rect<P>) {
+  return pointEqual(a.p, b.p) && a.width === b.width && a.height === b.height
 }
 
 export function pointEqual<P extends WorldPoint | RelativePoint>(a?: P, b?: P) {

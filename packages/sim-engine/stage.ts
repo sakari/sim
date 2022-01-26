@@ -82,6 +82,7 @@ export function toInitializer(stage: Stage, impl: Implementation): Array<engine.
   }, new Map())
   return stage.processes.map(process => {
     const f = impl.processes[process.kind]
+    assert(f, `missing process kind ${process.kind}`)
     const entity = preEntities.get(process.entity)
     assert(entity, 'missing entity for process')
     return ctx => f(process.name, entity, ctx)

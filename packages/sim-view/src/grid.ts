@@ -6,7 +6,7 @@ export class Grid extends Element {
   items: Row[] = []
 
   constructor(items: Row[]) {
-    super(undefined, false)
+    super()
     this.set(items)
   }
 
@@ -29,5 +29,6 @@ export class Grid extends Element {
       this.addChild(item.label, 0, 0)
       this.addChild(item.value, 0, 0)
     })
+    this.onRender()
   }
 }

@@ -1,4 +1,4 @@
-import { Element } from './element'
+import { Element, Update } from './element'
 import { RelativePoint, worldPoint } from './point'
 import { Elemental } from './elemental'
 
@@ -44,22 +44,28 @@ export class Stage implements Elemental {
     this.view.appendChild(this.draw)
   }
 
-  addChild(element: Element, atX: number, atY: number) {
+  addChild(element: Element, atX = 0, atY = 0) {
     this.elements.add(element)
     element.add(this, atX, atY)
-    this.draw.appendChild(element.draw)
   }
 
-  render() {
+  onRemoveChild(e: Element) {
+    this.elements.delete(e)
+  }
+
+  removeChild(element: Element) {
+    element.remove()
+    this.elements.delete(element)
+  }
+
+  update(update: Update) {
     for (const element of this.elements) {
-      element.render()
+      element.update(update)
     }
   }
 
-  update() {
-    for (const element of this.elements) {
-      element.update()
-    }
+  addRoot(e: Element) {
+    this.addChild(e)
   }
 
   mousemove(event: MouseEvent) {
@@ -68,10 +74,13 @@ export class Stage implements Elemental {
         event.offsetX - this.dragging.offset.p.x,
         event.offsetY - this.dragging.offset.p.y
       )
-      if (this.dragging.entity.draw !== this.draw.lastElementChild) {
+      if (
+        this.dragging.entity.draw !== this.draw.lastElementChild &&
+        this.dragging.entity.dragToTop
+      ) {
         this.draw.insertBefore(this.dragging.entity.draw, null)
       }
-      this.dragging.entity.move(w)
+      this.dragging.entity.drag(w)
     } else if (this.panning) {
       this.window.x += event.offsetX - this.panning.startX
       this.window.y += event.offsetY - this.panning.startY
@@ -82,17 +91,38 @@ export class Stage implements Elemental {
   }
 
   mousedown(event: MouseEvent) {
-    for (const element of this.elements) {
-      const hit = element.hit(event.offsetX, event.offsetY)
-      if (hit && element.draggable) {
-        this.dragging = { offset: hit, entity: element }
-        return
-      }
+    const drag = hitDraggable(this.elements, event)
+    if (drag) {
+      this.dragging = drag
+      this.dragging.entity.dragStart(worldPoint(event.offsetX, event.offsetY))
+      return
     }
     this.panning = { startX: event.offsetX, startY: event.offsetY }
   }
   dragStop() {
-    this.dragging = undefined
+    if (this.dragging) {
+      this.dragging.entity.dragStop()
+      this.dragging = undefined
+    }
     this.panning = undefined
+  }
+}
+
+function hitDraggable(
+  elements: Set<Element>,
+  event: MouseEvent
+): undefined | { offset: RelativePoint; entity: Element } {
+  for (const element of elements) {
+    const hit = element.hit(event.offsetX, event.offsetY)
+    if (hit) {
+      if (element.draggable) {
+        return { offset: hit, entity: element }
+      } else {
+        const child = hitDraggable(element.children, event)
+        if (child) {
+          return child
+        }
+      }
+    }
   }
 }

@@ -1,9 +1,14 @@
-import { pointTostr, relativePoint, RelativePoint, toLocal, WorldPoint } from './point'
+import { Rect, relativePoint, RelativePoint, toLocal, worldPoint, WorldPoint } from './point'
 import { Elemental } from './elemental'
+import * as engine from 'sim-engine'
 
 let elementIds = 0
 function getElementId() {
   return `element-${elementIds++}`
+}
+
+export type Update = {
+  entities: Map<engine.AnyEntity, Element>
 }
 
 export class Element implements Elemental {
@@ -12,7 +17,11 @@ export class Element implements Elemental {
   elementId: string
   children: Set<Element> = new Set()
 
-  constructor(graph: SVGGraphicsElement | undefined, public draggable: boolean) {
+  constructor(
+    graph: SVGGraphicsElement | undefined = undefined,
+    public draggable = false,
+    public dragToTop = true
+  ) {
     const svgNS = 'http://www.w3.org/2000/svg'
     const draw = document.createElementNS(svgNS, 'g')
     if (graph) {
@@ -30,10 +39,35 @@ export class Element implements Elemental {
     this.parent.draw.appendChild(this.draw)
   }
 
+  remove() {
+    this.removeAllChildren()
+    this.draw.remove()
+    this.parent?.onRemoveChild(this)
+  }
+
+  render() {
+    for (const child of this.children) {
+      child.render()
+    }
+    this.onRender()
+  }
+
+  onRender() {
+    // nop
+  }
+
+  onRemoveChild(child: Element) {
+    this.children.delete(child)
+  }
+
   removeChild(child: Element) {
-    child.draw.remove()
+    child.remove()
     this.children.delete(child)
     return this
+  }
+
+  addRoot(element: Element) {
+    this.parent?.addRoot(element)
   }
 
   removeAllChildren() {
@@ -48,21 +82,8 @@ export class Element implements Elemental {
     return this
   }
 
-  // recalculate entity contents
-  update() {
-    // nop
-  }
-
-  // implement to recalculate rendering if needed
-  onRender() {
-    // nop
-  }
-
-  render() {
-    for (const child of this.children) {
-      child.render()
-    }
-    this.onRender()
+  update(_update: Update) {
+    this.render()
   }
 
   center(): RelativePoint {
@@ -70,17 +91,29 @@ export class Element implements Elemental {
     return relativePoint(this, box.width / 2, box.height / 2)
   }
 
+  bounds(): Rect<WorldPoint> {
+    const b = this.draw.getBBox()
+    const ctm = this.draw.getCTM()!
+    const point = new DOMPoint(b.x, b.y)
+    const viewPortPoint = point.matrixTransform(ctm)
+    return { p: worldPoint(viewPortPoint.x, viewPortPoint.y), width: b.width, height: b.height }
+  }
+
+  position(): WorldPoint {
+    return this.bounds().p
+  }
+
   hit(worldX: number, worldY: number): RelativePoint | null {
-    const rect = this.draw.getBoundingClientRect()
+    const rect = this.bounds()
     const hit =
-      rect.x < worldX &&
-      rect.y < worldY &&
-      rect.x + rect.width > worldX &&
-      rect.y + rect.height > worldY
+      rect.p.x < worldX &&
+      rect.p.y < worldY &&
+      rect.p.x + rect.width > worldX &&
+      rect.p.y + rect.height > worldY
     if (!hit) {
       return null
     }
-    const offset = relativePoint(this, worldX - rect.x, worldY - rect.y)
+    const offset = relativePoint(this, worldX - rect.p.x, worldY - rect.p.y)
     return offset
   }
 
@@ -88,8 +121,16 @@ export class Element implements Elemental {
     this.draw.setAttributeNS(null, 'transform', `translate(${x}, ${y})`)
   }
 
-  move(point: WorldPoint) {
+  dragStart(_point: WorldPoint) {
+    // nop
+  }
+
+  dragStop() {
+    // nop
+  }
+
+  drag(point: WorldPoint) {
     const to = toLocal(this.parent!, point)
-    this.draw.setAttributeNS(null, 'transform', `translate(${to.p.x}, ${to.p.y})`)
+    this.moveRelative(to.p.x, to.p.y)
   }
 }

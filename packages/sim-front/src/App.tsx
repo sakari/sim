@@ -5,11 +5,14 @@ import * as test from 'sim-test'
 export default function App() {
   const ref = React.useRef<any>(null)
   const [app] = React.useState(
-    view.app({ container: window, stage: test.stage, implementation: test.impl })
+    view.app({
+      container: window,
+      stage: test.messaging.stage,
+      implementation: test.messaging.impl
+    })
   )
   React.useEffect(() => {
     ref?.current?.appendChild(app.app.view)
-    app.app.render()
     app.tick()
   }, [])
   return (

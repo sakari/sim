@@ -1,23 +1,39 @@
-import { assert, Option, Spawn, Ctx, Process, Wait, AnyEntity, Choice, Entity } from './types'
+import {
+  assert,
+  Option,
+  Spawn,
+  Ctx,
+  Process,
+  Wait,
+  AnyEntity,
+  Choice,
+  Entity,
+  EntityState
+} from './types'
 
 export type Initializer = (ctx: Ctx) => Process<AnyEntity>
 
-function reachableEntities(root: AnyEntity, out: Set<AnyEntity>): void {
-  if (out.has(root)) {
+function findEntities(value: EntityState, out: Set<AnyEntity>): void {
+  if (value instanceof Entity) {
+    if (!out.has(value)) {
+      out.add(value)
+      findEntities(value.state, out)
+    }
     return
   }
-  out.add(root)
-  assert(
-    root.state && typeof root.state === 'object' && !Array.isArray(root.state),
-    'expected a record'
-  )
-  Object.values(root.state).forEach(value => {
-    if (value instanceof Entity) {
-      reachableEntities(value, out)
-    } else if (Array.isArray(value)) {
-      value.forEach(v => reachableEntities(v, out))
+  if (Array.isArray(value)) {
+    return value.forEach(v => findEntities(v, out))
+  }
+  if (value && typeof value === 'object') {
+    for (const [, v] of Object.entries(value)) {
+      findEntities(v, out)
     }
-  })
+    return
+  }
+}
+
+function reachableEntities(root: AnyEntity, out: Set<AnyEntity>): void {
+  findEntities(root, out)
 }
 
 export class Engine {
@@ -25,6 +41,7 @@ export class Engine {
   private live: Array<Process<AnyEntity>>
   private waiting: Array<{ wait: Wait; agent: Process<AnyEntity> }>
   private process?: Generator
+  private onStep: Array<(step: StepEvent) => void> = []
 
   constructor(factories: Array<Initializer>) {
     this.ctx = {
@@ -43,6 +60,16 @@ export class Engine {
     this.waiting = []
   }
 
+  on(event: 'step', cb: (step: StepEvent) => void) {
+    this.onStep.push(cb)
+  }
+  off(event: 'step', cb?: (step: StepEvent) => void) {
+    if (cb) {
+      this.onStep = this.onStep.filter(f => f != cb)
+      return
+    }
+    this.onStep = []
+  }
   processes(): Set<Process<AnyEntity>> {
     return new Set<Process<AnyEntity>>([...this.live, ...this.waiting.map(w => w.agent)])
   }
@@ -69,7 +96,9 @@ export class Engine {
 
   step(value?: any): StepEvent {
     assert(this.process, 'Process has not been started yet')
-    return this.process?.next(value).value
+    const step = this.process?.next(value).value
+    this.onStep.forEach(cb => cb(step))
+    return step
   }
 
   toFinish(eventHandler: (step: StepEvent) => any) {
@@ -151,40 +180,40 @@ export class Engine {
   }
 }
 
-class SleepEvent {
+export class SleepEvent {
   public readonly kind = 'sleep'
   constructor(public readonly agent: Process<AnyEntity>, public readonly wait: Wait) {}
 }
-class FinishEvent {
+export class FinishEvent {
   public readonly kind = 'finish'
   constructor(public readonly error?: string) {}
 }
-class ChoiceEvent {
+export class ChoiceEvent {
   public readonly kind = 'choice'
   constructor(public readonly options: Option<any>[]) {}
 }
-class WokeEvent {
+export class WokeEvent {
   public readonly kind = 'woke'
   constructor(public readonly agent: Process<AnyEntity>) {}
 }
-class ScheduleEvent {
+export class ScheduleEvent {
   public readonly kind = 'schedule'
   constructor(public readonly live: Array<Process<AnyEntity>>) {}
 }
-class RunEvent {
+export class RunEvent {
   public readonly kind = 'run'
   constructor(public readonly agent: Process<AnyEntity>) {}
 }
-class PickEvent {
+export class PickEvent {
   public readonly kind = 'pick'
   constructor(public readonly pick: Option<any>) {}
 }
-class DoneEvent {
+export class DoneEvent {
   public readonly kind = 'done'
   constructor(public readonly agent: Process<AnyEntity>) {}
 }
 
-class SpawnEvent {
+export class SpawnEvent {
   public readonly kind = 'spawn'
   constructor(
     public readonly agent: Process<AnyEntity>,
@@ -192,7 +221,7 @@ class SpawnEvent {
   ) {}
 }
 
-type StepEvent =
+export type StepEvent =
   | SpawnEvent
   | DoneEvent
   | PickEvent

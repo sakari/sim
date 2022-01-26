@@ -10,7 +10,13 @@ export function text(str: string): SVGGraphicsElement {
   return text
 }
 export class Text extends Element {
-  constructor(t: string) {
-    super(text(t), false)
+  text: SVGGraphicsElement
+  constructor(t: string, draggable = false) {
+    const label = text(t)
+    super(label, draggable)
+    this.text = label
+  }
+  set(t: string) {
+    this.text.textContent = t
   }
 }

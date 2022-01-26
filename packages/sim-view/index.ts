@@ -1,7 +1,6 @@
 import * as engine from 'sim-engine'
 import * as entity from './src/entity'
 import * as process from './src/process'
-import * as arrow from './src/arrow'
 import * as stage from './src/stage'
 
 export { executionController } from './src/ui/execution'
@@ -11,27 +10,70 @@ export function app(opts: {
   stage?: engine.Stage
 }) {
   const entityGraphics = new Map()
+  const processGraphics = new Map()
   const app = new stage.Stage()
   const eng = new engine.Engine(
     opts.stage && opts.implementation ? engine.toInitializer(opts.stage, opts.implementation) : []
   )
-  eng.entities().forEach(e => {
-    const g = new entity.Entity(e)
-    entityGraphics.set(e, g)
-    app.addChild(g, 200, 200)
+  refresh({
+    entities: entityGraphics,
+    processes: processGraphics,
+    currentProcesses: eng.processes(),
+    currentEntities: eng.entities(),
+    stage: app
   })
-  const arrows: Array<arrow.Arrow> = []
-  eng.processes().forEach(p => {
-    const g = new process.Process(p)
-    app.addChild(g, Math.random() * 500, Math.random() * 500)
-    const e = entityGraphics.get(p.state)
-    const arr = new arrow.Arrow(g, e)
-    arrows.push(arr)
-    app.addChild(arr, 0, 0)
+  eng.on('step', () => {
+    refresh({
+      entities: entityGraphics,
+      processes: processGraphics,
+      currentProcesses: eng.processes(),
+      currentEntities: eng.entities(),
+      stage: app
+    })
   })
   function tick() {
-    arrows.forEach(a => a.update())
+    app.update({ entities: entityGraphics })
     requestAnimationFrame(tick)
   }
+  app.update({ entities: entityGraphics })
   return { app, tick, engine: eng }
+}
+
+function refresh(state: {
+  entities: Map<engine.AnyEntity, entity.Entity>
+  stage: stage.Stage
+  processes: Map<engine.Process<engine.AnyEntity>, process.Process>
+  currentEntities: Set<engine.AnyEntity>
+  currentProcesses: Set<engine.Process<engine.AnyEntity>>
+}) {
+  console.group('refresh')
+  console.time('refresh')
+  for (const [existing, element] of state.entities) {
+    if (!state.currentEntities.has(existing)) {
+      state.stage.removeChild(element)
+      state.entities.delete(existing)
+    }
+  }
+  for (const [existing, element] of state.processes) {
+    if (!state.currentProcesses.has(existing)) {
+      state.stage.removeChild(element)
+      state.processes.delete(existing)
+    }
+  }
+  for (const e of state.currentEntities) {
+    if (!state.entities.has(e)) {
+      const g = new entity.Entity(e)
+      state.entities.set(e, g)
+      state.stage.addChild(g, Math.random() * 500, Math.random() * 500)
+    }
+  }
+  for (const p of state.currentProcesses) {
+    if (!state.processes.has(p)) {
+      const g = new process.Process(p)
+      state.processes.set(p, g)
+      state.stage.addChild(g, Math.random() * 500, Math.random() * 500)
+    }
+  }
+  console.timeEnd('refresh')
+  console.groupEnd()
 }

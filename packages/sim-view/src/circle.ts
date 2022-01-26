@@ -6,7 +6,7 @@ export class Circle extends Element {
   body: SVGGraphicsElement
 
   constructor(private readonly element: Element) {
-    super(undefined, false)
+    super()
     this.body = document.createElementNS(svgNS, 'circle')
     this.body.setAttributeNS(null, 'fill', 'cyan')
     this.body.setAttributeNS(null, 'stroke', 'none')

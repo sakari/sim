@@ -31,7 +31,7 @@ export type EntityState =
   | Props
   | AnyEntity
 
-export type AnyEntity = Entity<EntityState>
+export type AnyEntity = Entity<Props>
 
 export interface Ctx {
   wait: (label: string, condition?: () => boolean) => Wait
@@ -44,21 +44,29 @@ export interface Ctx {
   either: <Value>(...options: Array<Option<Value>>) => Choice<Value>
 }
 
+export type EntityId = string
 export class Entity<State> {
+  id: EntityId
   public constructor(
     public readonly kind: string,
     public readonly name: string,
     public readonly state: State
-  ) {}
+  ) {
+    this.id = `${kind}:${name}`
+  }
 }
 
+export type ProcessId = string
 export class Process<E extends AnyEntity> {
+  id: ProcessId
   constructor(
     public readonly kind: string,
     public readonly name: string,
     public readonly state: E,
     public readonly body: Generator
-  ) {}
+  ) {
+    this.id = `${kind}:${name}`
+  }
 }
 
 export function assert(condition: any, message: string): asserts condition {

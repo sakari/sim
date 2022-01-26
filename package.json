@@ -1,0 +1,19 @@
+{
+  "name": "sim",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "lerna": "^4.0.0"
+  },
+  "scripts": {
+    "watch": "nodemon -w packages -e .tsx,.ts,.json --ignore '**/dist/**' --ignore 'packages/sim-front' -x yarn lerna run build"
+  },
+  "dependencies": {
+    "nodemon": "2.0.15"
+  }
+}

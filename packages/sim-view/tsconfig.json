@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "strict": true,
+    "declaration": true,
+    "target": "es2017",
+    "lib": ["es6", "es2017", "dom", "esnext.asynciterable"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "removeComments": false,
+    "alwaysStrict": true,
+    "types": ["offscreencanvas"],
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "jsx": "react"
+  },
+  "exclude": ["packages", "dist"]
+}

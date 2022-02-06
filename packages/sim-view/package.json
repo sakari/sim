@@ -8,6 +8,9 @@
     "build": "tsc"
   },
   "devDependencies": {
+    "@types/d3-dispatch": "3.0.1",
+    "@types/d3-drag": "3.0.1",
+    "@types/d3-timer": "3.0.0",
     "@types/offscreencanvas": "2019.6.4",
     "eslint": "8.6.0",
     "eslint-config-prettier": "8.3.0",
@@ -21,6 +24,7 @@
   },
   "dependencies": {
     "path-intersection": "2.2.1",
-    "react": "17.0.2"
+    "react": "17.0.2",
+    "webcola": "3.4.0"
   }
 }

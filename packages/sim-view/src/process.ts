@@ -31,12 +31,14 @@ export class Process extends Element {
       return
     }
     if (this.arrow) {
-      this.arrow.set({ to })
-      this.arrow.update(state)
-    } else {
-      this.arrow = new Arrow(this, to, this.process.name)
-      this.addRoot(this.arrow)
-      this.arrow.update(state)
+      if (this.arrow.to === to) {
+        this.arrow.update(state)
+        return
+      }
+      this.arrow.remove()
     }
+    this.arrow = new Arrow(this, to, this.process.name)
+    this.addRoot(this.arrow)
+    this.arrow.update(state)
   }
 }

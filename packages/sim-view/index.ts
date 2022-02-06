@@ -84,6 +84,18 @@ function refresh(state: {
       state.layout.addNode({ id: p.id, width: 50, height: 50 })
     }
   }
+  for (const [p, g] of state.processes) {
+    state.layout.removeLinksFromSource(p.id)
+    if (g.arrow) {
+      state.layout.addLink(g.arrow.id, p.id, p.state.id)
+    }
+  }
+  for (const [e, g] of state.entities) {
+    state.layout.removeLinksFromSource(e.id)
+    for (const [, arr] of g.arrows) {
+      state.layout.addLink(arr.element.id, e.id, arr.entity.id)
+    }
+  }
   console.group('layout')
   console.time('layout')
   state.layout.fix()

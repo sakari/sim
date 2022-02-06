@@ -11,7 +11,7 @@ export class Entity extends Element {
   private readonly entity: engine.AnyEntity
   private label: Labelled
   private grid: Grid
-  private arrows: Map<string, { element: Arrow; entity: AnyEntity }> = new Map()
+  arrows: Map<string, { element: Arrow; entity: AnyEntity }> = new Map()
 
   constructor(entity: engine.AnyEntity) {
     super(undefined, true)

@@ -20,9 +20,11 @@ class ArrowHandle extends Element {
   }
 }
 
+let arrowIds = 0
+
 export class Arrow extends Element {
   private readonly from: Element
-  private to: Element
+  to: Element
   private cache?: {
     label: WorldPoint
     from: Rect<WorldPoint>
@@ -30,6 +32,8 @@ export class Arrow extends Element {
   }
   private line: SVGGraphicsElement
   private label: ArrowHandle
+  id: string
+
   constructor(from: Element, to: Element, label: string) {
     super(undefined, false)
     const svgNS = 'http://www.w3.org/2000/svg'
@@ -44,6 +48,7 @@ export class Arrow extends Element {
     this.draw.appendChild(this.line)
     this.label = new ArrowHandle(label)
     this.addChild(this.label)
+    this.id = '' + arrowIds++
   }
 
   withMargin(rectBox: Rect<WorldPoint>, padding = 10) {

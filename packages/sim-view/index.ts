@@ -41,6 +41,14 @@ export function app(opts: {
     requestAnimationFrame(tick)
   }
   app.update({ entities: entityGraphics })
+  refresh({
+    layout,
+    entities: entityGraphics,
+    processes: processGraphics,
+    currentProcesses: eng.processes(),
+    currentEntities: eng.entities(),
+    stage: app
+  })
   return { app, tick, engine: eng }
 }
 

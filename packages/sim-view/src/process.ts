@@ -9,7 +9,7 @@ export class Process extends Element {
   label: Labelled
   arrow?: Arrow
 
-  constructor(private readonly process: engine.Process<engine.AnyEntity>) {
+  constructor(private readonly process: engine.AnyProcess) {
     super(undefined, true)
     this.label = new Labelled(this.process.name, new Circle(new Text('process')))
     this.addChild(this.label)

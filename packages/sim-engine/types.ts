@@ -1,3 +1,5 @@
+import { StepProcess } from './engine'
+
 export class Wait implements Wait {
   constructor(public readonly label: string, public readonly condition: () => boolean) {}
 }
@@ -32,6 +34,7 @@ export type EntityState =
   | AnyEntity
 
 export type AnyEntity = Entity<string, Props>
+export type AnyProcess = Process<string, AnyEntity>
 
 export interface Ctx {
   wait: (label: string, condition?: () => boolean) => Wait
@@ -39,7 +42,7 @@ export interface Ctx {
     kind: string,
     name: string,
     entity: A,
-    factory: (local: A, ctx: Ctx) => Generator
+    factory: (local: A, ctx: Ctx) => StepProcess
   ) => Spawn<A>
   either: <Value>(...options: Array<Option<Value>>) => Choice<Value>
 }
@@ -57,13 +60,13 @@ export class Entity<K, State extends Props> {
 }
 
 export type ProcessId = string
-export class Process<E extends AnyEntity> {
+export class Process<Kind, E extends AnyEntity> {
   id: ProcessId
   constructor(
-    public readonly kind: string,
+    public readonly kind: Kind,
     public readonly name: string,
     public readonly state: E,
-    public readonly body: Generator
+    public readonly body: StepProcess
   ) {
     this.id = `${kind}:${name}`
   }
@@ -76,5 +79,5 @@ export function assert(condition: any, message: string): asserts condition {
 }
 
 export class Spawn<A extends AnyEntity> {
-  constructor(public readonly agent: Process<A>) {}
+  constructor(public readonly agent: Process<any, A>) {}
 }

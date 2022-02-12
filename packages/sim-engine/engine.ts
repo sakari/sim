@@ -1,17 +1,20 @@
+import { AnyEntity, AnyProcess, assert, Choice, Ctx, Entity, EntityState, Option, Process, Spawn, Wait } from './types'
 import {
-  assert,
-  Option,
-  Spawn,
-  Ctx,
-  Process,
-  Wait,
-  AnyEntity,
-  Choice,
-  Entity,
-  EntityState
-} from './types'
+  ChoiceEvent,
+  DoneEvent,
+  FinishEvent,
+  PickEvent,
+  RunEvent,
+  ScheduleEvent,
+  SleepEvent,
+  SpawnEvent,
+  StepEvent,
+  WokeEvent
+} from './step'
 
-export type Initializer = (ctx: Ctx) => Process<AnyEntity>
+export type StepProcess = Generator<Spawn<any> | Choice<any> | Wait | undefined, any, any>
+
+export type Initializer = (ctx: Ctx) => Process<any, AnyEntity>
 
 function findEntities(value: EntityState, out: Set<AnyEntity>): void {
   if (value instanceof Entity) {
@@ -38,8 +41,8 @@ function reachableEntities(root: AnyEntity, out: Set<AnyEntity>): void {
 
 export class Engine {
   private ctx: Ctx
-  private live: Array<Process<AnyEntity>>
-  private waiting: Array<{ wait: Wait; agent: Process<AnyEntity> }>
+  private live: Array<Process<any, AnyEntity>>
+  private waiting: Array<{ wait: Wait; agent: AnyProcess }>
   private process?: Generator
   private onStep: Array<(step: StepEvent) => void> = []
 
@@ -50,9 +53,9 @@ export class Engine {
         kind: string,
         name: string,
         entity: A,
-        factory: (entity: A, ctx: Ctx) => Generator
+        factory: (entity: A, ctx: Ctx) => StepProcess
       ) => {
-        return new Spawn(new Process<A>(kind, name, entity, factory(entity, this.ctx)))
+        return new Spawn(new Process<any, A>(kind, name, entity, factory(entity, this.ctx)))
       },
       wait: (label, fn) => new Wait(label, fn ?? (() => true))
     }
@@ -70,8 +73,8 @@ export class Engine {
     }
     this.onStep = []
   }
-  processes(): Set<Process<AnyEntity>> {
-    return new Set<Process<AnyEntity>>([...this.live, ...this.waiting.map(w => w.agent)])
+  processes(): Set<AnyProcess> {
+    return new Set<AnyProcess>([...this.live, ...this.waiting.map(w => w.agent)])
   }
 
   entities(): Set<AnyEntity> {
@@ -124,7 +127,7 @@ export class Engine {
   }
 
   private *run() {
-    const pickedAgent: Process<AnyEntity> | undefined = yield new ScheduleEvent(this.live)
+    const pickedAgent: AnyProcess | undefined = yield new ScheduleEvent(this.live)
     const cursor = pickedAgent
       ? this.live.indexOf(pickedAgent)
       : Math.floor(Math.random() * this.live.length)
@@ -180,81 +183,3 @@ export class Engine {
   }
 }
 
-export class SleepEvent {
-  public readonly kind = 'sleep'
-  constructor(public readonly agent: Process<AnyEntity>, public readonly wait: Wait) {}
-}
-export class FinishEvent {
-  public readonly kind = 'finish'
-  constructor(public readonly error?: string) {}
-}
-export class ChoiceEvent {
-  public readonly kind = 'choice'
-  constructor(public readonly options: Option<any>[]) {}
-}
-export class WokeEvent {
-  public readonly kind = 'woke'
-  constructor(public readonly agent: Process<AnyEntity>) {}
-}
-export class ScheduleEvent {
-  public readonly kind = 'schedule'
-  constructor(public readonly live: Array<Process<AnyEntity>>) {}
-}
-export class RunEvent {
-  public readonly kind = 'run'
-  constructor(public readonly agent: Process<AnyEntity>) {}
-}
-export class PickEvent {
-  public readonly kind = 'pick'
-  constructor(public readonly pick: Option<any>) {}
-}
-export class DoneEvent {
-  public readonly kind = 'done'
-  constructor(public readonly agent: Process<AnyEntity>) {}
-}
-
-export class SpawnEvent {
-  public readonly kind = 'spawn'
-  constructor(
-    public readonly agent: Process<AnyEntity>,
-    public readonly created: Process<AnyEntity>
-  ) {}
-}
-
-export type StepEvent =
-  | SpawnEvent
-  | DoneEvent
-  | PickEvent
-  | RunEvent
-  | SleepEvent
-  | FinishEvent
-  | ChoiceEvent
-  | WokeEvent
-  | ScheduleEvent
-
-export function processStr(process: Process<AnyEntity>) {
-  return `<${process.kind}:${process.name}>`
-}
-
-export function stepEventStr(event: StepEvent) {
-  const agentStr = 'agent' in event && event.agent ? processStr(event.agent) : 'system'
-  let str = ''
-  switch (event.kind) {
-    case 'spawn':
-      str = `created ${processStr(event.created)}`
-      break
-    case 'pick':
-      str = event.pick.label
-      break
-    case 'choice':
-      str = `${event.options.map(opt => opt.label).join(', ')}`
-      break
-    case 'schedule':
-      str = `live ${event.live.length}`
-      break
-    case 'finish':
-      str = event.error ?? ''
-      break
-  }
-  return `${agentStr} ${event.kind}${str == '' ? '' : `: ${str}`}`
-}

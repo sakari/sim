@@ -1,7 +1,8 @@
 import * as types from './types'
 import * as engine from './engine'
-import { assert, Entity } from './types'
+import { AnyEntity, assert, Entity } from './types'
 import { PropSchema, Schema, TypeOf } from './schema'
+import { StepProcess } from './engine'
 
 interface Rec {
   [key: string]: State
@@ -18,13 +19,40 @@ export interface Stage {
   processes: Array<{ kind: Kind; name: string; entity: EntityId }>
 }
 
-export function factory<K extends string, S extends PropSchema<Record<string, Schema>>>(
-  _schema: S,
+export function entityFactory<K extends string, S extends PropSchema<Record<string, Schema>>>(
+  schema: S,
   kind: K
-) {
-  return (name: string, state: TypeOf<S>): Entity<K, TypeOf<S>> => {
-    return new Entity(kind, name, state)
+): EntityFactory<K, S> {
+  return {
+    kind,
+    schema,
+    factory: (name: string, state: TypeOf<S>): Entity<K, TypeOf<S>> => {
+      return new Entity(kind, name, state)
+    }
   }
+}
+
+export type EntityFactory<Kind extends string, S extends PropSchema<Record<string, Schema>>> = {
+  kind: Kind
+  schema: S
+  factory: (name: string, state: TypeOf<S>) => Entity<Kind, TypeOf<S>>
+}
+
+export function processFactory<Kind extends string, E extends AnyEntity>(
+  kind: Kind,
+  process: () => StepProcess
+): ProcessFactory<Kind, E> {
+  return {
+    kind,
+    factory: (name: string, entity: E): types.Process<Kind, E> => {
+      return new types.Process(kind, name, entity, process())
+    }
+  }
+}
+
+export type ProcessFactory<Kind extends string, E extends AnyEntity> = {
+  kind: Kind
+  factory: (name: string, entity: E) => types.Process<Kind, E>
 }
 
 type Kind = string
@@ -33,7 +61,7 @@ export interface Implementation {
   entities: Record<Kind, (name: string, state: any) => types.AnyEntity>
   processes: Record<
     Kind,
-    (name: string, entity: types.AnyEntity, ctx: types.Ctx) => types.Process<types.AnyEntity>
+    (name: string, entity: types.AnyEntity, ctx: types.Ctx) => types.Process<any, types.AnyEntity>
   >
 }
 

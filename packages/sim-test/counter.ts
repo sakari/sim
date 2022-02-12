@@ -1,4 +1,4 @@
-import { Implementation, Stage, Ctx, Process, Entity } from 'sim-engine'
+import { Implementation, Stage, Ctx, Process, Entity, StepProcess } from 'sim-engine'
 
 class CounterEntity extends Entity<'counter', { counter: number }> {}
 
@@ -6,7 +6,7 @@ export function* tester(local: CounterEntity, ctx: Ctx) {
   yield ctx.wait('wait for counter', () => local.state.counter > 10)
 }
 
-export function* counter(local: CounterEntity, ctx: Ctx) {
+export function* counter(local: CounterEntity, ctx: Ctx): StepProcess {
   while (local.state.counter < 20) {
     const choice: string = yield ctx.either({ label: 'inc' }, { label: 'dec' })
     switch (choice) {

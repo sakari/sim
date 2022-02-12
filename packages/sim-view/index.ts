@@ -56,9 +56,9 @@ function refresh(state: {
   layout: Layout
   entities: Map<engine.AnyEntity, entity.Entity>
   stage: stage.Stage
-  processes: Map<engine.Process<engine.AnyEntity>, process.Process>
+  processes: Map<engine.AnyProcess, process.Process>
   currentEntities: Set<engine.AnyEntity>
-  currentProcesses: Set<engine.Process<engine.AnyEntity>>
+  currentProcesses: Set<engine.AnyProcess>
 }) {
   console.group('refresh')
   console.time('refresh')

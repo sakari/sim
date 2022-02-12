@@ -1,6 +1,6 @@
-import { Implementation, Stage, toInitializer, Ctx, Engine, Process, stepEventStr, Entity } from 'sim-engine'
+import { Implementation, Stage, Ctx, Process, Entity } from 'sim-engine'
 
-class CounterEntity extends Entity<{ counter: number }> {}
+class CounterEntity extends Entity<'counter', { counter: number }> {}
 
 export function* tester(local: CounterEntity, ctx: Ctx) {
   yield ctx.wait('wait for counter', () => local.state.counter > 10)

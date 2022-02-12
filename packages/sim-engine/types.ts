@@ -31,7 +31,7 @@ export type EntityState =
   | Props
   | AnyEntity
 
-export type AnyEntity = Entity<Props>
+export type AnyEntity = Entity<string, Props>
 
 export interface Ctx {
   wait: (label: string, condition?: () => boolean) => Wait
@@ -45,10 +45,10 @@ export interface Ctx {
 }
 
 export type EntityId = string
-export class Entity<State> {
+export class Entity<K, State extends Props> {
   id: EntityId
   public constructor(
-    public readonly kind: string,
+    public readonly kind: K,
     public readonly name: string,
     public readonly state: State
   ) {

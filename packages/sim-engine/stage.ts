@@ -1,6 +1,7 @@
 import * as types from './types'
 import * as engine from './engine'
-import { assert } from './types'
+import { assert, Entity } from './types'
+import { PropSchema, Schema, TypeOf } from './schema'
 
 interface Rec {
   [key: string]: State
@@ -15,6 +16,15 @@ type State = string | number | boolean | null | undefined | Array<State> | Rec |
 export interface Stage {
   entities: Array<{ kind: Kind; name: string; state: State }>
   processes: Array<{ kind: Kind; name: string; entity: EntityId }>
+}
+
+export function factory<K extends string, S extends PropSchema<Record<string, Schema>>>(
+  _schema: S,
+  kind: K
+) {
+  return (name: string, state: TypeOf<S>): Entity<K, TypeOf<S>> => {
+    return new Entity(kind, name, state)
+  }
 }
 
 type Kind = string

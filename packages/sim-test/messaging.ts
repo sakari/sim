@@ -1,8 +1,8 @@
 import { Implementation, Stage, Ctx, Process, Entity } from 'sim-engine'
 
-class Message extends Entity<{ to: Party; data: number }> {}
-class Party extends Entity<{ connection: Network; data: number; counter: number }> {}
-class Network extends Entity<{ messages: Message[]; parties: Party[] }> {}
+class Message extends Entity<'message', { to: Party; data: number }> {}
+class Party extends Entity<'party', { connection: Network; data: number; counter: number }> {}
+class Network extends Entity<'network', { messages: Message[]; parties: Party[] }> {}
 
 function receiveMessage(local: Party) {
   const index = local.state.connection.state.messages.findIndex(

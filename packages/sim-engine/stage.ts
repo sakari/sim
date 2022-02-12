@@ -19,17 +19,16 @@ export interface Stage {
   processes: Array<{ kind: Kind; name: string; entity: EntityId }>
 }
 
-export function entityFactory<
-  K extends string,
-  S extends PropSchema<Record<string, Schema>>,
-  E extends Entity<K, TypeOf<S>>
->(schema: S, kind: K): EntityFactory<K, S> {
+export function entityFactory<K extends string, S extends PropSchema<Record<string, Schema>>>(
+  schema: S,
+  kind: K
+): EntityFactory<K, S> {
   return {
     kind,
     schema,
-    factory: (name: string, state: TypeOf<S>): E => {
-      // @ts-ignore
-      return new Entity(kind, name, state)
+    factory: (name: string, state: TypeOf<S>): Entity<K, TypeOf<S>> => {
+      const entity = new Entity(kind, schema, name, state)
+      return entity
     }
   }
 }

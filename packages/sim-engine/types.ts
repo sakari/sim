@@ -1,4 +1,5 @@
 import { StepProcess } from './engine'
+import { AnyProps } from './schema'
 
 export class Wait implements Wait {
   constructor(public readonly label: string, public readonly condition: () => boolean) {}
@@ -52,6 +53,7 @@ export class Entity<K, State extends Props> {
   id: EntityId
   public constructor(
     public readonly kind: K,
+    public readonly schema: AnyProps,
     public readonly name: string,
     public readonly state: State
   ) {

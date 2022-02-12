@@ -19,6 +19,7 @@ export interface ArraySchema<Item extends Schema> {
 export function array<I extends Schema>(item: I): ArraySchema<I> {
   return { type: 'array', items: item }
 }
+export type AnyProps = PropSchema<Record<string, Schema>>
 export interface PropSchema<Fields extends Record<string, Schema>> {
   type: 'object'
   fields: Fields
@@ -32,7 +33,7 @@ export interface EntitySchema<E extends AnyEntity> {
   kind: EntityKind
   _phantom?: E
 }
-export function entity(kind: EntityKind) {
+export function entity<E extends AnyEntity>(kind: EntityKind): EntitySchema<E> {
   return { type: 'entity', kind }
 }
 

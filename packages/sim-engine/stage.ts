@@ -1,7 +1,7 @@
 import * as types from './types'
 import * as engine from './engine'
-import { AnyEntity, assert, Entity } from './types'
-import { PropSchema, Schema, TypeOf } from './schema'
+import { AnyEntity, assert, Ctx, Entity } from './types'
+import { AnyProps, PropSchema, Schema, TypeOf } from './schema'
 import { StepProcess } from './engine'
 
 interface Rec {
@@ -19,14 +19,16 @@ export interface Stage {
   processes: Array<{ kind: Kind; name: string; entity: EntityId }>
 }
 
-export function entityFactory<K extends string, S extends PropSchema<Record<string, Schema>>>(
-  schema: S,
-  kind: K
-): EntityFactory<K, S> {
+export function entityFactory<
+  K extends string,
+  S extends PropSchema<Record<string, Schema>>,
+  E extends Entity<K, TypeOf<S>>
+>(schema: S, kind: K): EntityFactory<K, S> {
   return {
     kind,
     schema,
-    factory: (name: string, state: TypeOf<S>): Entity<K, TypeOf<S>> => {
+    factory: (name: string, state: TypeOf<S>): E => {
+      // @ts-ignore
       return new Entity(kind, name, state)
     }
   }
@@ -38,31 +40,42 @@ export type EntityFactory<Kind extends string, S extends PropSchema<Record<strin
   factory: (name: string, state: TypeOf<S>) => Entity<Kind, TypeOf<S>>
 }
 
+type EF = (name: string, state: TypeOf<AnyProps>) => AnyEntity
+
 export function processFactory<Kind extends string, E extends AnyEntity>(
   kind: Kind,
-  process: () => StepProcess
+  process: (entity: E, ctx: Ctx) => StepProcess
 ): ProcessFactory<Kind, E> {
   return {
     kind,
-    factory: (name: string, entity: E): types.Process<Kind, E> => {
-      return new types.Process(kind, name, entity, process())
+    factory: (name: string, entity: E, ctx: Ctx): types.Process<Kind, E> => {
+      return new types.Process(kind, name, entity, process(entity, ctx))
     }
   }
 }
 
 export type ProcessFactory<Kind extends string, E extends AnyEntity> = {
   kind: Kind
-  factory: (name: string, entity: E) => types.Process<Kind, E>
+  factory: (name: string, entity: E, ctx: Ctx) => types.Process<Kind, E>
 }
+
+type PF = (name: string, entity: AnyEntity, ctx: Ctx) => types.Process<Kind, AnyEntity>
 
 type Kind = string
 type EntityId = string
-export interface Implementation {
-  entities: Record<Kind, (name: string, state: any) => types.AnyEntity>
-  processes: Record<
-    Kind,
-    (name: string, entity: types.AnyEntity, ctx: types.Ctx) => types.Process<any, types.AnyEntity>
-  >
+
+export class Implementation {
+  entities: Record<Kind, EF> = {}
+  processes: Record<Kind, PF> = {}
+
+  defineProcess(p: ProcessFactory<Kind, any>): this {
+    this.processes[p.kind] = p.factory
+    return this
+  }
+  defineEntity(e: EntityFactory<Kind, AnyProps>): this {
+    this.entities[e.kind] = e.factory
+    return this
+  }
 }
 
 function entityKey(kind: Kind, name: string): EntityId {

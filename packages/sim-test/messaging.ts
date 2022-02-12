@@ -1,8 +1,38 @@
-import { Implementation, Stage, Ctx, Process, Entity } from 'sim-engine'
+import {
+  Implementation,
+  Stage,
+  Ctx,
+  entityFactory,
+  processFactory,
+  prop,
+  array,
+  entity,
+  number,
+  Entity
+} from 'sim-engine'
 
-class Message extends Entity<'message', { to: Party; data: number }> {}
-class Party extends Entity<'party', { connection: Network; data: number; counter: number }> {}
-class Network extends Entity<'network', { messages: Message[]; parties: Party[] }> {}
+const message = entityFactory(prop({ to: entity<Party>('party'), data: number() }), 'message')
+
+type Message = Entity<'message', { to: Party; data: number }>
+
+const party = entityFactory(
+  prop({
+    connection: entity<Network>('network'),
+    data: number(),
+    counter: number()
+  }),
+  'party'
+)
+type Party = Entity<'party', { connection: Network; data: number; counter: number }>
+
+const network = entityFactory(
+  prop({
+    messages: array(entity<Message>('message')),
+    parties: array(entity<Party>('party'))
+  }),
+  'network'
+)
+type Network = Entity<'network', { messages: Message[]; parties: Party[] }>
 
 function receiveMessage(local: Party) {
   const index = local.state.connection.state.messages.findIndex(
@@ -14,7 +44,7 @@ function receiveMessage(local: Party) {
   }
 }
 
-export function* party(local: Party, ctx: Ctx) {
+export function* partyProcess(local: Party, ctx: Ctx) {
   yield ctx.wait('register')
   local.state.connection.state.parties.push(local)
   while (local.state.data < 10) {
@@ -29,7 +59,7 @@ export function* party(local: Party, ctx: Ctx) {
           }))
         )
         local.state.connection.state.messages.push(
-          new Message('message', `msg:${local.name}:${local.state.counter++}`, {
+          message.factory(`msg:${local.name}:${local.state.counter++}`, {
             to: peer,
             data: local.state.data
           })
@@ -69,18 +99,8 @@ export const stage: Stage = {
     { kind: 'party', name: 'p3', entity: 'party:e3' }
   ]
 }
-export const impl: Implementation = {
-  entities: {
-    network: (name, state) => {
-      return new Network('network', name, state)
-    },
-    party: (name, state) => {
-      return new Party('party', name, state)
-    }
-  },
-  processes: {
-    party: (name, state: any, ctx) => {
-      return new Process('party', name, state, party(state, ctx))
-    }
-  }
-}
+export const impl: Implementation = new Implementation()
+  .defineEntity(network)
+  .defineEntity(party)
+  .defineEntity(message)
+  .defineProcess(processFactory('party', partyProcess))

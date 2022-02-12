@@ -1,4 +1,14 @@
-import { Implementation, Stage, Ctx, Process, Entity, StepProcess } from 'sim-engine'
+import {
+  Implementation,
+  Stage,
+  Ctx,
+  Entity,
+  StepProcess,
+  entityFactory,
+  prop,
+  number,
+  processFactory
+} from 'sim-engine'
 
 class CounterEntity extends Entity<'counter', { counter: number }> {}
 
@@ -28,18 +38,7 @@ export const stage: Stage = {
     { kind: 'tester', name: 'tester', entity: 'counter:count' }
   ]
 }
-export const impl: Implementation = {
-  entities: {
-    counter: (name: string, state: any) => {
-      return new CounterEntity('counter', name, state)
-    }
-  },
-  processes: {
-    counter: (name, state: any, ctx) => {
-      return new Process('counter', name, state, counter(state, ctx))
-    },
-    tester: (name, state: any, ctx) => {
-      return new Process('tester', name, state, tester(state, ctx))
-    }
-  }
-}
+export const impl: Implementation = new Implementation()
+  .defineEntity(entityFactory(prop({ counter: number() }), 'counter'))
+  .defineProcess(processFactory('counter', counter))
+  .defineProcess(processFactory('tester', tester))

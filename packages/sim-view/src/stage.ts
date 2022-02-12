@@ -18,8 +18,8 @@ export class Stage implements Elemental {
 
   constructor() {
     this.view = document.createElementNS(ns, 'svg') as any
-    this.view.setAttributeNS(null, 'width', '' + window.innerWidth)
-    this.view.setAttributeNS(null, 'height', '' + window.innerHeight)
+    this.view.setAttributeNS(null, 'width', '100%')
+    this.view.setAttributeNS(null, 'height', '100%')
     this.view.setAttributeNS(null, 'style', 'background-color:#fafafa')
     this.view.addEventListener('mousedown', this.mousedown.bind(this))
     this.view.addEventListener('mouseup', this.dragStop.bind(this))

@@ -3,10 +3,20 @@ import * as view from 'sim-view'
 import * as test from 'sim-test'
 
 export default function App() {
+  const [size, setSize] = React.useState({ width: window.innerWidth, height: window.innerHeight })
+  React.useEffect(() => {
+    function set() {
+      setSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    window.addEventListener('resize', set)
+    return () => {
+      window.removeEventListener('resize', set)
+    }
+  }, [])
   const ref = React.useRef<any>(null)
   const [app] = React.useState(
     view.app({
-      container: window,
+      container: { width: window.innerWidth, height: window.innerHeight },
       stage: test.messaging.stage,
       implementation: test.messaging.impl
     })
@@ -16,11 +26,11 @@ export default function App() {
     app.tick()
   }, [])
   return (
-    <div>
-      <div>
+    <div style={size}>
+      <div style={{ height: '30px', width: '100%' }}>
         <view.executionController engine={app.engine} stage={app.app} />
       </div>
-      <div className="App" ref={ref}></div>
+      <div className="App" ref={ref} style={{ height: size.height - 30, width: '100%' }}></div>
     </div>
   )
 }

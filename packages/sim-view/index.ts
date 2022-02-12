@@ -6,7 +6,7 @@ import { Layout } from './src/layout'
 
 export { executionController } from './src/ui/execution'
 export function app(opts: {
-  container: any
+  container: { width: number; height: number }
   implementation?: engine.Implementation
   stage?: engine.Stage
 }) {
